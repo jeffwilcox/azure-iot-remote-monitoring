@@ -128,8 +128,6 @@
     <Compile Include="DeviceManager.cs" />
     <Compile Include="SimulatorCore\Devices\DeviceBase.cs" />
     <Compile Include="Cooler\CommandProcessors\ChangeDeviceStateCommandProcessor.cs" />
-    <Compile Include="Cooler\CommandProcessors\ChangeSetPointTempCommandProcessor.cs" />
-    <Compile Include="Cooler\CommandProcessors\DiagnosticTelemetryCommandProcessor.cs" />
     <Compile Include="Cooler\CommandProcessors\StartCommandProcessor.cs" />
     <Compile Include="Cooler\CommandProcessors\StopCommandProcessor.cs" />
     <Compile Include="Cooler\Devices\Factory\CoolerDeviceFactory.cs" />
@@ -151,7 +149,6 @@
     <Compile Include="SimulatorCore\Transport\EmptyTransport.cs" />
     <Compile Include="SimulatorCore\Transport\ITransport.cs" />
     <Compile Include="SimulatorCore\Transport\IoTHubTransport.cs" />
-    <Compile Include="Cooler\Telemetry\Data\RemoteMonitorTelemetryData.cs" />
     <Compile Include="Cooler\Telemetry\RemoteMonitorTelemetry.cs" />
     <Compile Include="Cooler\Telemetry\Factory\CoolerTelemetryFactory.cs" />
     <Compile Include="Cooler\Telemetry\StartupTelemetry.cs" />

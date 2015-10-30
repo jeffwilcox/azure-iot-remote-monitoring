@@ -24,21 +24,6 @@ namespace Microsoft.Azure.Devices.Applications.RemoteMonitoring.DeviceAdmin.Web.
             _deviceLogic = deviceLogic;
         }
 
-        // POST: api/v1/devices/sample/5
-        [HttpPost]
-        [Route("sample/{count}")]
-        [WebApiRequirePermission(Permission.AddDevices)]
-        public async Task<HttpResponseMessage> GenerateSampleDevicesAsync(int count)
-        {
-            ValidatePositiveValue("count", count);
-
-            return await GetServiceResponseAsync(async () =>
-            {
-                await _deviceLogic.GenerateNDevices(count);
-                return true;
-            });
-        }
-
         // GET: api/v1/devices/5
         [HttpGet]
         [Route("{id}")]

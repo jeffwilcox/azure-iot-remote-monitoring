@@ -315,7 +315,8 @@ function UploadFile()
         [Parameter(Mandatory=$true,Position=0)] [string] $filePath,
         [Parameter(Mandatory=$true,Position=1)] [string] $storageAccountName,
         [Parameter(Mandatory=$true,Position=2)] [string] $resourceGroupName,
-        [Parameter(Mandatory=$true,Position=3)] [string] $containerName
+        [Parameter(Mandatory=$true,Position=3)] [string] $containerName,
+        [Parameter(Mandatory=$true,Position=4)] [bool]   $secure
     )
     $maxSleep = 60
     $containerName = $containerName.ToLowerInvariant()
@@ -364,11 +365,14 @@ function UploadFile()
         }
     }
     Write-Host
-    $sasPolicy = New-Object Microsoft.WindowsAzure.Storage.Blob.SharedAccessBlobPolicy
-    $sasPolicy.SharedAccessStartTime = [System.DateTime]::Now.AddMinutes(-5)
-    $sasPolicy.SharedAccessExpiryTime = [System.DateTime]::Now.AddHours(24)
-    $sasPolicy.Permissions = [Microsoft.WindowsAzure.Storage.Blob.SharedAccessBlobPermissions]::Read
-    $sasToken = $blob.GetSharedAccessSignature($sasPolicy)
+    if ($secure)
+    {
+        $sasPolicy = New-Object Microsoft.WindowsAzure.Storage.Blob.SharedAccessBlobPolicy
+        $sasPolicy.SharedAccessStartTime = [System.DateTime]::Now.AddMinutes(-5)
+        $sasPolicy.SharedAccessExpiryTime = [System.DateTime]::Now.AddHours(24)
+        $sasPolicy.Permissions = [Microsoft.WindowsAzure.Storage.Blob.SharedAccessBlobPermissions]::Read
+        $sasToken = $blob.GetSharedAccessSignature($sasPolicy)
+    }
     return $blob.Uri.ToString() + $sasToken
 }
 

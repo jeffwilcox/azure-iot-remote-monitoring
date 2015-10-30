@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Dynamic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Devices.Applications.RemoteMonitoring.Common.SampleDataGenerator;
-using Microsoft.Azure.Devices.Applications.RemoteMonitoring.Simulator.WebJob.Cooler.Telemetry.Data;
 using Microsoft.Azure.Devices.Applications.RemoteMonitoring.Simulator.WebJob.SimulatorCore.Logging;
 using Microsoft.Azure.Devices.Applications.RemoteMonitoring.Simulator.WebJob.SimulatorCore.Telemetry;
 
@@ -14,66 +16,57 @@ namespace Microsoft.Azure.Devices.Applications.RemoteMonitoring.Simulator.WebJob
         private readonly string _deviceId;
 
         private const int REPORT_FREQUENCY_IN_SECONDS = 5;
-        private const int PEAK_FREQUENCY_IN_SECONDS = 90;
 
-        private SampleDataGenerator _temperatureGenerator;
-        private SampleDataGenerator _humidityGenerator;
-        private SampleDataGenerator _externalTemperatureGenerator;
+        private IEnumerator<IDictionary<string, object>> _data;
+        private bool _active;
 
-        public bool ActivateExternalTemperature { get; set; }
+        public bool TelemetryActive
+        {
+            get { return _active; }
+            set
+            {
+                // When we turn on telemetry, we reset our device data from the dataset
+                if (!_active && value)
+                {
+                    _data.Reset();
+                }
+                _active = value;
+            }
+        }
 
-        public bool TelemetryActive { get; set; }
-
-        public RemoteMonitorTelemetry(ILogger logger, string deviceId)
+        public RemoteMonitorTelemetry(ILogger logger, string deviceId, IList<ExpandoObject> dataset)
         {
             _logger = logger;
             _deviceId = deviceId;
+            _active = false;
+            _data = dataset.GetEnumerator();
 
-            ActivateExternalTemperature = false;
             TelemetryActive = true;
-
-            int peakFrequencyInTicks = Convert.ToInt32(Math.Ceiling((double)PEAK_FREQUENCY_IN_SECONDS /  REPORT_FREQUENCY_IN_SECONDS));
-
-            _temperatureGenerator = new SampleDataGenerator(33, 36, 42, peakFrequencyInTicks);
-            _humidityGenerator = new SampleDataGenerator(20, 50);
-            _externalTemperatureGenerator = new SampleDataGenerator(-20, 120);
         }
 
         public async Task SendEventsAsync(CancellationToken token, Func<object, Task> sendMessageAsync)
         {
-            var monitorData = new RemoteMonitorTelemetryData();
-            string messageBody;
             while (!token.IsCancellationRequested)
             {
-                if (TelemetryActive)
+                if (_active)
                 {
-                    monitorData.DeviceId = _deviceId;
-                    monitorData.Temperature = _temperatureGenerator.GetNextValue();
-                    monitorData.Humidity = _humidityGenerator.GetNextValue();
-                    messageBody = "Temperature: " + Math.Round(monitorData.Temperature, 2)
-                        + " Humidity: " + Math.Round(monitorData.Humidity, 2);
-
-                    if (ActivateExternalTemperature)
+                    try
                     {
-                        monitorData.ExternalTemperature = _externalTemperatureGenerator.GetNextValue();
-                        messageBody += " External Temperature: " + Math.Round((double)monitorData.ExternalTemperature, 2);
+                        // Search the data for the next row that contains this device ID
+                        while (_data.MoveNext() && !_data.Current.Values.Contains(_deviceId)) ;
+
+                        _logger.LogInfo(_deviceId + " =>\n\t" + string.Join("\n\t", _data.Current.Select(m => m.Key + ": " + m.Value.ToString()).ToArray()));
+
+                        await sendMessageAsync(_data.Current);
                     }
-                    else
+                    catch (InvalidOperationException)
                     {
-                        monitorData.ExternalTemperature = null;
+                        // End of the data or the data has been modified; stop replaying
+                        TelemetryActive = false;
                     }
-
-                    //_logger.LogInfo("Sending " + messageBody + " for Device: " + _deviceId);
-
-                    await sendMessageAsync(monitorData);
                 }
                 await Task.Delay(TimeSpan.FromSeconds(REPORT_FREQUENCY_IN_SECONDS), token);
             }
-        }
-
-        public void ChangeSetPointTemperature(double newSetPointTemperature)
-        {
-            _temperatureGenerator.ShiftSubsequentData(newSetPointTemperature);
         }
     }
 }

@@ -119,7 +119,7 @@ namespace Microsoft.Azure.Devices.Applications.RemoteMonitoring.Simulator
             // Dependencies to inject into the Bulk Device Tester
             var logger = new TraceLogger();
             var configProvider = new ConfigurationProvider();
-            var telemetryFactory = new CoolerTelemetryFactory(logger);
+            var telemetryFactory = new CoolerTelemetryFactory(logger, configProvider);
 
             var serializer = new JsonSerialize();
             var transportFactory = new IotHubTransportFactory(serializer, logger, configProvider);

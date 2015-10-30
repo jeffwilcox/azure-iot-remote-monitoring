@@ -976,25 +976,6 @@ namespace Microsoft.Azure.Devices.Applications.RemoteMonitoring.DeviceAdmin.Infr
             return true;
         }
 
-        /// <summary>
-        /// Generates N devices with random data and properties for testing
-        /// NOTE: Adds the devices to both the device registry and device identity repository
-        /// </summary>
-        /// <param name="deviceCount">Number of devices to generate</param>
-        /// <returns></returns>
-        /// <remarks>TEMPORARY DEVICE GENERATION CODE FOR TESTING PURPOSES!</remarks>
-        public async Task GenerateNDevices(int deviceCount)
-        {
-            Random randomNumber = new Random();
-
-            for (int i = 0; i < deviceCount; i++)
-            {
-                SecurityKeys generatedSecurityKeys = _securityKeyGenerator.CreateRandomKeys();
-                dynamic device = SampleDeviceFactory.GetSampleDevice(randomNumber, generatedSecurityKeys);
-                await AddDeviceToRepositoriesAsync(device, generatedSecurityKeys);
-            }   
-        }
-
         public async Task<List<string>> BootstrapDefaultDevices()
         {
             List<string> sampleIds = SampleDeviceFactory.GetDefaultDeviceNames();

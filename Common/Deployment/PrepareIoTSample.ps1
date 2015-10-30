@@ -21,6 +21,7 @@ $deploymentTemplatePath = "$(Split-Path $MyInvocation.MyCommand.Path)\LocalMonit
 $global:site = "https://localhost:44305/"
 $global:appName = "iotsuite"
 $cloudDeploy = $false
+$projectRoot = Join-Path $PSScriptRoot "..\.." -Resolve
 
 if ($environmentName -ne "local")
 {
@@ -65,13 +66,19 @@ Write-Host "Deployment template path: $deploymentTemplatePath"
 # Upload WebPackages
 if ($cloudDeploy)
 {
-    $projectRoot = Join-Path $PSScriptRoot "..\.." -Resolve
-    $webPackage = UploadFile ("$projectRoot\DeviceAdministration\Web\obj\{0}\Package\Web.zip" -f $configuration) $storageAccount.Name $resourceGroupName "WebDeploy"
+    $webPackage = UploadFile ("$projectRoot\DeviceAdministration\Web\obj\{0}\Package\Web.zip" -f $configuration) $storageAccount.Name $resourceGroupName "WebDeploy" $true
     $params += @{packageUri=$webPackage}
     FixWebJobZip ("$projectRoot\WebJobHost\obj\{0}\Package\WebJobHost.zip" -f $configuration)
-    $webJobPackage = UploadFile ("$projectRoot\WebJobHost\obj\{0}\Package\WebJobHost.zip" -f $configuration) $storageAccount.Name $resourceGroupName "WebDeploy"
+    $webJobPackage = UploadFile ("$projectRoot\WebJobHost\obj\{0}\Package\WebJobHost.zip" -f $configuration) $storageAccount.Name $resourceGroupName "WebDeploy" $true
     $params += @{webJobPackageUri=$webJobPackage}
 }
+
+# Upload simulator data
+$simulatorDataFileName = "data.csv"
+$simulatorDataContainer = "simulatordata"
+UploadFile "$projectRoot\Simulator\Simulator.WebJob\Cooler\Data\$simulatorDataFileName" $storageAccount.Name $resourceGroupName $simulatorDataContainer $false
+UpdateEnvSetting "SimulatorDataFileName" $simulatorDataFileName
+UpdateEnvSetting "SimulatorDataContainer" $simulatorDataContainer
 
 # Stream analytics does not auto stop, and requires a start time for both create and update as well as stop if already exists
 [string]$startTime = (get-date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
